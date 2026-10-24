@@ -13,6 +13,7 @@ import {
 import useRequests from '../hooks/useRequests';
 import { useAuth } from '../context/AuthContext';
 import ExchangeRequestCard from '../components/ExchangeRequestCard';
+import ChatModal from '../components/ChatModal';
 
 export default function MyRequests() {
   const { profile, hasProfile, profileLoading } = useAuth();
@@ -26,6 +27,7 @@ export default function MyRequests() {
 
   const [filter, setFilter] = useState('all');
   const [actionError, setActionError] = useState('');
+  const [activeChatRequest, setActiveChatRequest] = useState(null);
 
   const visibleRequests = useMemo(
     () => requests.filter((r) => filter === 'all' || r.status === filter),
@@ -50,6 +52,10 @@ export default function MyRequests() {
     } catch (err) {
       setActionError(err.message || 'Could not decline the request.');
     }
+  }
+
+  function handleOpenChat(request) {
+    setActiveChatRequest(request);
   }
 
   const filters = [
@@ -189,9 +195,19 @@ export default function MyRequests() {
               currentUserId={profile?._id}
               onAccept={handleAccept}
               onDecline={handleDecline}
+              onMessage={handleOpenChat}
             />
           ))}
         </div>
+      )}
+
+      {/* Chat modal — mounted when a connected request is selected */}
+      {activeChatRequest && (
+        <ChatModal
+          request={activeChatRequest}
+          currentStudent={profile}
+          onClose={() => setActiveChatRequest(null)}
+        />
       )}
     </section>
   );

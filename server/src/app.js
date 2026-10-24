@@ -4,6 +4,7 @@ const cors = require('cors');
 
 const studentRoutes = require('./routes/students');
 const requestRoutes = require('./routes/requests');
+const chatRoutes = require('./routes/chat');
 const authHandler = require('./routes/authRoutes');
 
 const notFoundMiddleware = require('./middleware/notFoundMiddleware');
@@ -37,6 +38,7 @@ app.get('/api/health', (req, res) => {
 // API routes
 app.use('/api/students', studentRoutes);
 app.use('/api/requests', requestRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Handle unknown routes
 app.use(notFoundMiddleware);

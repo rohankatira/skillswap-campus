@@ -1,3 +1,16 @@
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
+
+/* ── Chat modal theme tokens ── */
+:root {
+  --chat-bg: #ffffff;
+  --chat-bubble-other: #e5e7eb;
+  --chat-bubble-other-text: #111827;
+}
+
+.dark {
+  --chat-bg: #111827;
+  --chat-bubble-other: #1f2937;
+  --chat-bubble-other-text: #f3f4f6;
+}

@@ -18,12 +18,18 @@ const auth = betterAuth({
   database: mongodbAdapter(mongoose.connection.db),
 
   // Server base URL
-  baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:5000',
+  baseURL: (process.env.BETTER_AUTH_URL || 'http://localhost:5000').trim().replace(/\/$/, ''),
 
   // Allow requests from the React frontend
-  trustedOrigins: [
-    process.env.CLIENT_ORIGIN || 'http://localhost:5173',
-  ],
+  trustedOrigins: Array.from(
+    new Set([
+      (process.env.CLIENT_ORIGIN || 'http://localhost:5173').trim().replace(/\/$/, ''),
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'http://127.0.0.1:5173',
+      'https://skillswap-client.onrender.com',
+    ])
+  ),
 
   // Email + password sign-in with mandatory OTP email verification
   emailAndPassword: {

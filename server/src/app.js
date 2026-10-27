@@ -13,11 +13,31 @@ const errorMiddleware = require('./middleware/errorMiddleware');
 
 const app = express();
 
-// Allow requests from your React frontend
+// Allow requests from React frontend (local & Render deployment)
 // credentials: true is required for Better Auth cookie-based sessions
+const rawClientOrigin = (process.env.CLIENT_ORIGIN || 'http://localhost:5173').trim().replace(/\/$/, '');
+const allowedOrigins = [
+  rawClientOrigin,
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://127.0.0.1:5173',
+  'https://skillswap-client.onrender.com',
+];
+
 app.use(
   cors({
-    origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+      const cleanOrigin = origin.replace(/\/$/, '');
+      if (
+        allowedOrigins.includes(cleanOrigin) ||
+        cleanOrigin.endsWith('.onrender.com') ||
+        cleanOrigin.endsWith('.vercel.app')
+      ) {
+        return callback(null, true);
+      }
+      return callback(null, true);
+    },
     credentials: true,
   })
 );

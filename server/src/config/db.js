@@ -2,14 +2,19 @@
 const dns = require('dns');
 const mongoose = require('mongoose');
 
-// Node's resolver on this machine defaults to 127.0.0.1 (no DNS listener there),
-// which breaks the SRV lookup required by `mongodb+srv://` URIs (querySrv ECONNREFUSED).
-// Use public DNS servers instead; override with DNS_SERVERS="ip1,ip2" in .env if needed.
-const dnsServers = (process.env.DNS_SERVERS || '8.8.8.8,1.1.1.1')
-  .split(',')
-  .map((s) => s.trim())
-  .filter(Boolean);
-dns.setServers(dnsServers);
+// Node's resolver on local Windows defaults to 127.0.0.1 (causing querySrv ECONNREFUSED for SRV records).
+// Use public DNS servers safely; in cloud container environments (like Render), wrapped in try-catch.
+try {
+  const dnsServers = (process.env.DNS_SERVERS || '8.8.8.8,1.1.1.1')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (dnsServers.length > 0) {
+    dns.setServers(dnsServers);
+  }
+} catch (err) {
+  console.warn('DNS server override skipped:', err.message);
+}
 
 async function connectDB() {
   // Mongoose caches the connection internally.

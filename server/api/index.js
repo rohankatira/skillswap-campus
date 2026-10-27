@@ -39,11 +39,12 @@ module.exports = async (req, res) => {
       handler(req, res);
     });
   } catch (error) {
-    console.error('[Vercel] Failed to initialise app:', error.message);
+    console.error('[Vercel] Failed to initialise app:', error);
     if (!res.headersSent) {
       res.status(503).json({
         success: false,
         message: 'Service temporarily unavailable. Please try again.',
+        error: error.message,
       });
     }
   }

@@ -2,18 +2,24 @@
 const dns = require('dns');
 const mongoose = require('mongoose');
 
-// Node's resolver on local Windows defaults to 127.0.0.1 (causing querySrv ECONNREFUSED for SRV records).
-// Use public DNS servers safely; in cloud container environments (like Render), wrapped in try-catch.
-try {
-  const dnsServers = (process.env.DNS_SERVERS || '8.8.8.8,1.1.1.1')
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean);
-  if (dnsServers.length > 0) {
-    dns.setServers(dnsServers);
+// Only override DNS on local Windows dev if needed; never override on Vercel/cloud serverless
+if (
+  process.platform === 'win32' &&
+  !process.env.VERCEL &&
+  !process.env.AWS_REGION &&
+  process.env.NODE_ENV !== 'production'
+) {
+  try {
+    const dnsServers = (process.env.DNS_SERVERS || '8.8.8.8,1.1.1.1')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (dnsServers.length > 0) {
+      dns.setServers(dnsServers);
+    }
+  } catch (err) {
+    console.warn('DNS server override skipped:', err.message);
   }
-} catch (err) {
-  console.warn('DNS server override skipped:', err.message);
 }
 
 async function connectDB() {

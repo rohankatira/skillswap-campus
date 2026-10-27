@@ -16,8 +16,7 @@ function fromNodeHeaders(nodeHeaders) {
   }
   return webHeaders;
 }
-
-const { auth } = require('../auth');
+const { getAuth } = require('../auth');
 const Student = require('../models/Student');
 
 /**
@@ -26,6 +25,7 @@ const Student = require('../models/Student');
  */
 async function requireAuth(req, res, next) {
   try {
+    const auth = await getAuth();
     const session = await auth.api.getSession({
       headers: fromNodeHeaders(req.headers),
     });

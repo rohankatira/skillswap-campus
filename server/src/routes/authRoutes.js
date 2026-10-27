@@ -4,7 +4,8 @@ let authHandler = null;
 async function getAuthHandler() {
   if (!authHandler) {
     const { toNodeHandler } = await import('better-auth/node');
-    const { auth } = require('../auth');
+    const { getAuth } = require('../auth');
+    const auth = await getAuth();
     authHandler = toNodeHandler(auth);
   }
   return authHandler;

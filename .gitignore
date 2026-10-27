@@ -1,0 +1,23 @@
+# Environment variables (DO NOT COMMIT REAL SECRETS)
+.env
+.env.*
+server/.env
+client/.env
+
+# Dependencies
+node_modules/
+server/node_modules/
+client/node_modules/
+
+# Production build artifacts
+dist/
+client/dist/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS & Editor
+.DS_Store
+.vscode/
+.idea/

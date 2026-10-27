@@ -33,6 +33,17 @@ const exchangeRequestSchema = new mongoose.Schema(
       enum: ['pending', 'accepted', 'declined'],
       default: 'pending',
     },
+
+    sharedNotes: {
+      type: String,
+      default: '',
+      maxlength: 10000,
+    },
+
+    savedRoadmap: {
+      type: Array,
+      default: null,
+    },
   },
   {
     timestamps: true,

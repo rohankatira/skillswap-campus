@@ -83,10 +83,15 @@ const sendMessage = async (req, res) => {
       });
     }
 
+    const type = req.body.type || 'text';
+    const metadata = req.body.metadata || null;
+
     const message = await Message.create({
       exchangeRequest: request._id,
       sender: req.student._id,
       text,
+      type,
+      metadata,
     });
 
     await message.populate('sender', 'name profileImage');
@@ -102,4 +107,63 @@ const sendMessage = async (req, res) => {
   }
 };
 
-module.exports = { getMessages, sendMessage };
+// GET /api/chat/:requestId/workspace
+const getWorkspace = async (req, res) => {
+  try {
+    const request = await getAuthorizedRequest(
+      req.params.requestId,
+      req.student._id
+    );
+
+    if (!request) {
+      return res.status(404).json({
+        success: false,
+        message: 'Workspace not found or access denied',
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      sharedNotes: request.sharedNotes || '',
+      savedRoadmap: request.savedRoadmap || null,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to fetch workspace data' });
+  }
+};
+
+// PUT /api/chat/:requestId/workspace
+const updateWorkspace = async (req, res) => {
+  try {
+    const request = await getAuthorizedRequest(
+      req.params.requestId,
+      req.student._id
+    );
+
+    if (!request) {
+      return res.status(404).json({
+        success: false,
+        message: 'Workspace not found or access denied',
+      });
+    }
+
+    if (req.body.sharedNotes !== undefined) {
+      request.sharedNotes = String(req.body.sharedNotes).slice(0, 10000);
+    }
+    if (req.body.savedRoadmap !== undefined) {
+      request.savedRoadmap = req.body.savedRoadmap;
+    }
+
+    await request.save();
+
+    res.status(200).json({
+      success: true,
+      sharedNotes: request.sharedNotes,
+      savedRoadmap: request.savedRoadmap,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to update workspace' });
+  }
+};
+
+module.exports = { getMessages, sendMessage, getWorkspace, updateWorkspace };

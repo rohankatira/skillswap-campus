@@ -104,14 +104,16 @@ export default function ExchangeRequestCard({
       )}
 
       {status === 'accepted' && (
-        <button
-          type="button"
-          onClick={() => onMessage?.(request)}
-          className="mt-5 flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
-        >
-          <MessageCircle size={16} />
-          Contact student
-        </button>
+        <div className="mt-5 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => onMessage?.(request)}
+            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:from-indigo-700 hover:to-violet-700 transition"
+          >
+            <MessageCircle size={16} />
+            Study Room & Schedule Meeting
+          </button>
+        </div>
       )}
 
       {status === 'pending' && !isRecipient && (

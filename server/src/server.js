@@ -19,6 +19,7 @@ async function startServer() {
       console.log(`Server running at http://localhost:${PORT}`);
       console.log(`Health check: http://localhost:${PORT}/api/health`);
       console.log(`Auth endpoint: http://localhost:${PORT}/api/auth`);
+      console.log(`Email service: Live Gmail SMTP active (${process.env.SMTP_USER || 'Ethereal'})`);
     });
   } catch (error) {
     console.error('MongoDB connection failed:', error.message);

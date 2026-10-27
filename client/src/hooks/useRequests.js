@@ -17,15 +17,12 @@ export default function useRequests({ enabled = true } = {}) {
 
   // Load once (or whenever enabled flips true)
   useEffect(() => {
-    if (!enabled) {
-      setLoading(false);
-      return undefined;
-    }
+    if (!enabled) return undefined;
 
     let cancelled = false;
-    setLoading(true);
 
     async function load() {
+      setLoading(true);
       try {
         const data = await getRequests();
         if (!cancelled) {

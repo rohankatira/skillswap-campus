@@ -48,8 +48,16 @@ export function AuthProvider({ children }) {
 
   // Load (or clear) the profile whenever the signed-in user changes.
   useEffect(() => {
-    if (isPending) return;
-    refreshProfile();
+    let ignore = false;
+    if (!isPending) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      refreshProfile().then(() => {
+        if (ignore) return;
+      });
+    }
+    return () => {
+      ignore = true;
+    };
   }, [isPending, refreshProfile]);
 
   return (

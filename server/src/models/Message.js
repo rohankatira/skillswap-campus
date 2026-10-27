@@ -22,6 +22,17 @@ const messageSchema = new mongoose.Schema(
       trim: true,
       maxlength: 2000,
     },
+
+    type: {
+      type: String,
+      enum: ['text', 'session_proposal', 'roadmap_share', 'call_invite'],
+      default: 'text',
+    },
+
+    metadata: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
+    },
   },
   {
     timestamps: true,

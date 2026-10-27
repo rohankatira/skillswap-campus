@@ -18,12 +18,18 @@ async function getAuth() {
     import('better-auth/plugins'),
   ]);
 
-  const baseURL = (
-    process.env.BETTER_AUTH_URL ||
-    (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : null) ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
-    'https://skillswap-campus-rohan-katiras-projects.vercel.app'
-  ).trim().replace(/\/$/, '');
+  let baseURL = process.env.BETTER_AUTH_URL;
+  if (!baseURL || (process.env.VERCEL && baseURL.includes('localhost'))) {
+    if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+      baseURL = `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+    } else if (process.env.VERCEL_URL) {
+      baseURL = `https://${process.env.VERCEL_URL}`;
+    } else {
+      baseURL = 'https://skillswap-campus-rohan-katiras-projects.vercel.app';
+    }
+  }
+  baseURL = (baseURL || 'http://localhost:5000').trim().replace(/\/$/, '');
+  process.env.BETTER_AUTH_URL = baseURL;
 
   authInstance = betterAuth({
     // Use the Mongoose native MongoDB client

@@ -20,7 +20,7 @@ const auth = betterAuth({
   // Server base URL
   baseURL: (process.env.BETTER_AUTH_URL || 'http://localhost:5000').trim().replace(/\/$/, ''),
 
-  // Allow requests from the React frontend
+  // Allow requests from the React frontend (local, Vercel, and Render deployments)
   trustedOrigins: Array.from(
     new Set([
       (process.env.CLIENT_ORIGIN || 'http://localhost:5173').trim().replace(/\/$/, ''),
@@ -28,6 +28,11 @@ const auth = betterAuth({
       'http://localhost:3000',
       'http://127.0.0.1:5173',
       'https://skillswap-client.onrender.com',
+      'https://*.vercel.app',
+      '*.vercel.app',
+      'https://*.onrender.com',
+      '*.onrender.com',
+      'https://client-mu-dun-74.vercel.app',
     ])
   ),
 

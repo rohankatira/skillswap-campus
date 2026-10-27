@@ -10,11 +10,22 @@ export default function SocialAuthButtons({ callbackUrl = '/', onError }) {
 
   function handleProviderMissing(provider) {
     const providerName = provider.charAt(0).toUpperCase() + provider.slice(1);
-    const msg = `${providerName} login is not configured yet. It requires ${provider.toUpperCase()}_CLIENT_ID and ${provider.toUpperCase()}_CLIENT_SECRET in server/.env.`;
+    const isProduction =
+      typeof window !== 'undefined' &&
+      window.location.hostname !== 'localhost' &&
+      window.location.hostname !== '127.0.0.1';
+
+    const envLocation = isProduction
+      ? 'your deployed backend environment variables (e.g. Render / Railway)'
+      : 'server/.env';
+
+    const msg = `${providerName} login is not configured yet. It requires ${provider.toUpperCase()}_CLIENT_ID and ${provider.toUpperCase()}_CLIENT_SECRET in ${envLocation}.`;
     setMissingProviderNotice({
       provider,
       providerName,
+      title: `${providerName} credentials not configured`,
       message: msg,
+      isSetupNeeded: true,
     });
     if (onError) onError(msg);
   }
@@ -23,6 +34,30 @@ export default function SocialAuthButtons({ callbackUrl = '/', onError }) {
     setLoadingProvider(provider);
     setMissingProviderNotice(null);
     if (onError) onError('');
+
+    const isProduction =
+      typeof window !== 'undefined' &&
+      window.location.hostname !== 'localhost' &&
+      window.location.hostname !== '127.0.0.1';
+
+    const currentApiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000').trim();
+    const isLocalApiInProd = isProduction && currentApiUrl.includes('localhost');
+
+    // Immediate check: deployed on Vercel/production but VITE_API_URL is still pointing to localhost
+    if (isLocalApiInProd) {
+      const msg =
+        'Backend API URL is not configured for production. In Vercel Project Settings > Environment Variables, add VITE_API_URL with your deployed backend URL (e.g. https://your-server.onrender.com), then redeploy.';
+      setMissingProviderNotice({
+        provider,
+        providerName: 'Backend Connection',
+        title: 'VITE_API_URL not configured in Vercel',
+        message: msg,
+        isConfigIssue: true,
+      });
+      if (onError) onError(msg);
+      setLoadingProvider(null);
+      return;
+    }
 
     // Ensure callbackURL is an absolute URL pointing back to the React frontend
     const resolvedCallbackUrl = callbackUrl.startsWith('http')
@@ -52,6 +87,7 @@ export default function SocialAuthButtons({ callbackUrl = '/', onError }) {
               setMissingProviderNotice({
                 provider,
                 providerName: provider,
+                title: `Sign-in Error`,
                 message: friendlyMsg,
               });
               if (onError) onError(friendlyMsg);
@@ -75,14 +111,36 @@ export default function SocialAuthButtons({ callbackUrl = '/', onError }) {
           setMissingProviderNotice({
             provider,
             providerName: provider,
+            title: `Sign-in Error`,
             message: rawMessage || `Could not connect to ${provider}.`,
           });
           if (onError) onError(rawMessage);
         }
         setLoadingProvider(null);
       }
-    } catch {
-      handleProviderMissing(provider);
+    } catch (err) {
+      console.error(`[SocialAuth] Error during ${provider} sign-in:`, err);
+      const isNetworkError =
+        err?.message?.includes('Failed to fetch') ||
+        err?.name === 'TypeError' ||
+        err?.message?.includes('NetworkError');
+
+      if (isNetworkError) {
+        const targetUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const msg = isProduction
+          ? `Cannot connect to backend at ${targetUrl}. Please make sure your backend is deployed, running, and VITE_API_URL is set in Vercel.`
+          : `Cannot connect to backend server at ${targetUrl}. Please ensure the server is running (npm run dev in /server).`;
+        setMissingProviderNotice({
+          provider,
+          providerName: 'Server Connection',
+          title: 'Backend Server Unreachable',
+          message: msg,
+          isServerUnreachable: true,
+        });
+        if (onError) onError(msg);
+      } else {
+        handleProviderMissing(provider);
+      }
       setLoadingProvider(null);
     }
   }
@@ -95,7 +153,7 @@ export default function SocialAuthButtons({ callbackUrl = '/', onError }) {
 
   return (
     <div className="w-full space-y-3">
-      {/* Notice Banner when credentials are not configured in server/.env */}
+      {/* Notice Banner */}
       {missingProviderNotice && (
         <div
           role="alert"
@@ -105,10 +163,10 @@ export default function SocialAuthButtons({ callbackUrl = '/', onError }) {
             <AlertCircle size={16} className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
             <div className="flex-1 space-y-1">
               <p className="font-semibold">
-                {missingProviderNotice.providerName} credentials not detected in server/.env
+                {missingProviderNotice.title || `${missingProviderNotice.providerName} Notice`}
               </p>
               <p className="text-amber-800 dark:text-amber-300">
-                OAuth requires registering an app in the provider&apos;s developer console to obtain a Client ID.
+                {missingProviderNotice.message}
               </p>
               <div className="pt-1">
                 <button
@@ -136,10 +194,10 @@ export default function SocialAuthButtons({ callbackUrl = '/', onError }) {
       {/* Setup Guide Modal */}
       {showSetupGuide && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-gray-800 dark:bg-gray-900">
+          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-gray-800 dark:bg-gray-900">
             <div className="flex items-center justify-between border-b border-gray-100 pb-4 dark:border-gray-800">
               <h3 className="text-base font-bold text-gray-900 dark:text-white">
-                How to Enable Social Login
+                How to Enable Social Login & Production Deploy
               </h3>
               <button
                 type="button"
@@ -151,15 +209,26 @@ export default function SocialAuthButtons({ callbackUrl = '/', onError }) {
             </div>
 
             <div className="mt-4 space-y-4 text-xs text-gray-600 dark:text-gray-300">
-              <p>
-                Social logins (Google and Facebook) require OAuth credentials from each respective provider to authenticate users securely.
-              </p>
+              <div className="rounded-xl border border-indigo-200 bg-indigo-50/70 p-3 dark:border-indigo-900/60 dark:bg-indigo-950/40">
+                <p className="font-semibold text-indigo-950 dark:text-indigo-200">
+                  Step 1: Link Frontend to Backend in Vercel
+                </p>
+                <p className="mt-1 text-[11px] text-indigo-800 dark:text-indigo-300">
+                  In your <strong>Vercel Dashboard &gt; Project Settings &gt; Environment Variables</strong>, add:
+                </p>
+                <div className="mt-1.5 font-mono text-[11px] bg-indigo-900 text-indigo-100 dark:bg-black rounded p-2">
+                  VITE_API_URL=https://your-backend-server.onrender.com
+                </div>
+                <p className="mt-1 text-[10px] text-indigo-700 dark:text-indigo-400">
+                  * Replace with your live backend URL (no trailing slash). Then trigger a <strong>Redeploy</strong> in Vercel.
+                </p>
+              </div>
 
               <div className="space-y-3">
                 {/* Google */}
                 <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-800/50">
                   <div className="flex items-center justify-between">
-                    <span className="font-semibold text-gray-900 dark:text-white">1. Google OAuth</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">Step 2: Google OAuth Credentials</span>
                     <a
                       href="https://console.cloud.google.com/apis/credentials"
                       target="_blank"
@@ -170,17 +239,24 @@ export default function SocialAuthButtons({ callbackUrl = '/', onError }) {
                     </a>
                   </div>
                   <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
-                    Create an OAuth 2.0 Client ID (Web Application). Add redirect URI:
-                    <code className="mx-1 rounded bg-gray-200 px-1 py-0.5 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
-                      http://localhost:5000/api/auth/callback/google
-                    </code>
+                    In your OAuth 2.0 Web Client, add:
                   </p>
+                  <ul className="mt-1 list-disc pl-4 space-y-1 text-[11px] text-gray-600 dark:text-gray-300">
+                    <li>
+                      <strong>Authorized JavaScript Origins:</strong><br />
+                      <code className="rounded bg-gray-200 px-1 text-gray-800 dark:bg-gray-700 dark:text-gray-200">{typeof window !== 'undefined' ? window.location.origin : 'https://your-app.vercel.app'}</code> and your backend URL
+                    </li>
+                    <li>
+                      <strong>Authorized Redirect URI:</strong><br />
+                      <code className="rounded bg-gray-200 px-1 text-gray-800 dark:bg-gray-700 dark:text-gray-200">https://your-backend-server.onrender.com/api/auth/callback/google</code>
+                    </li>
+                  </ul>
                 </div>
 
                 {/* Facebook */}
                 <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-800/50">
                   <div className="flex items-center justify-between">
-                    <span className="font-semibold text-gray-900 dark:text-white">2. Facebook OAuth</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">Step 3: Facebook OAuth (Optional)</span>
                     <a
                       href="https://developers.facebook.com/apps"
                       target="_blank"
@@ -191,25 +267,25 @@ export default function SocialAuthButtons({ callbackUrl = '/', onError }) {
                     </a>
                   </div>
                   <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
-                    Add Facebook Login. Set Valid OAuth Redirect URI:
-                    <code className="mx-1 rounded bg-gray-200 px-1 py-0.5 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
-                      http://localhost:5000/api/auth/callback/facebook
+                    Add Valid OAuth Redirect URI in Facebook Login:
+                    <code className="mx-1 block mt-1 rounded bg-gray-200 px-1 py-0.5 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+                      https://your-backend-server.onrender.com/api/auth/callback/facebook
                     </code>
                   </p>
                 </div>
               </div>
 
-              {/* Code snippet */}
+              {/* Code snippet for Backend */}
               <div>
                 <div className="mb-1.5 flex items-center justify-between">
                   <span className="font-semibold text-gray-700 dark:text-gray-300">
-                    Add to server/.env:
+                    Step 4: Set on Backend Host (Render/Railway):
                   </span>
                   <button
                     type="button"
                     onClick={() =>
                       handleCopySnippet(
-                        `GOOGLE_CLIENT_ID=your-google-client-id\nGOOGLE_CLIENT_SECRET=your-google-client-secret\nFACEBOOK_CLIENT_ID=your-facebook-app-id\nFACEBOOK_CLIENT_SECRET=your-facebook-app-secret`
+                        `CLIENT_ORIGIN=${typeof window !== 'undefined' ? window.location.origin : 'https://your-app.vercel.app'}\nBETTER_AUTH_URL=https://your-backend-server.onrender.com\nGOOGLE_CLIENT_ID=your-google-client-id\nGOOGLE_CLIENT_SECRET=your-google-client-secret`
                       )
                     }
                     className="inline-flex items-center gap-1 text-[11px] text-indigo-600 hover:underline dark:text-indigo-400"
@@ -219,7 +295,7 @@ export default function SocialAuthButtons({ callbackUrl = '/', onError }) {
                   </button>
                 </div>
                 <pre className="overflow-x-auto rounded-xl bg-gray-900 p-3 font-mono text-[11px] text-emerald-400 dark:bg-black">
-                  {`GOOGLE_CLIENT_ID=your-google-client-id\nGOOGLE_CLIENT_SECRET=your-google-client-secret\nFACEBOOK_CLIENT_ID=your-facebook-app-id\nFACEBOOK_CLIENT_SECRET=your-facebook-app-secret`}
+                  {`CLIENT_ORIGIN=${typeof window !== 'undefined' ? window.location.origin : 'https://your-app.vercel.app'}\nBETTER_AUTH_URL=https://your-backend-server.onrender.com\nGOOGLE_CLIENT_ID=your-google-client-id\nGOOGLE_CLIENT_SECRET=your-google-client-secret`}
                 </pre>
               </div>
             </div>

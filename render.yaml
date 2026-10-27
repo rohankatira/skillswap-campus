@@ -28,6 +28,26 @@ services:
       - key: CLIENT_ORIGIN
         # Replace with your actual client URL after first deploy
         value: https://skillswap-client.onrender.com
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: "465"
+      - key: SMTP_SECURE
+        value: "true"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        value: SkillSwap Campus <skillswapcampus01@gmail.com>
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: FACEBOOK_CLIENT_ID
+        sync: false
+      - key: FACEBOOK_CLIENT_SECRET
+        sync: false
 
   # ──────────────────────────────────────────────────────────
   # 2. Frontend — React / Vite Static Site

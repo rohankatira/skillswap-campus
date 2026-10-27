@@ -32,12 +32,19 @@ async function getApp() {
 module.exports = async (req, res) => {
   try {
     const handler = await getApp();
-    return handler(req, res);
+    return new Promise((resolve, reject) => {
+      res.on('finish', resolve);
+      res.on('close', resolve);
+      res.on('error', reject);
+      handler(req, res);
+    });
   } catch (error) {
     console.error('[Vercel] Failed to initialise app:', error.message);
-    res.status(503).json({
-      success: false,
-      message: 'Service temporarily unavailable. Please try again.',
-    });
+    if (!res.headersSent) {
+      res.status(503).json({
+        success: false,
+        message: 'Service temporarily unavailable. Please try again.',
+      });
+    }
   }
 };

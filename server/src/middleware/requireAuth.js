@@ -1,5 +1,22 @@
 
-const { fromNodeHeaders } = require('better-auth/node');
+/**
+ * Converts Node.js HTTP incoming request headers into Web Standard Headers
+ * without requiring ESM modules that fail in CommonJS runtimes.
+ */
+function fromNodeHeaders(nodeHeaders) {
+  const webHeaders = new Headers();
+  for (const [key, value] of Object.entries(nodeHeaders)) {
+    if (value !== undefined) {
+      if (Array.isArray(value)) {
+        value.forEach((v) => webHeaders.append(key, v));
+      } else {
+        webHeaders.set(key, value);
+      }
+    }
+  }
+  return webHeaders;
+}
+
 const { auth } = require('../auth');
 const Student = require('../models/Student');
 

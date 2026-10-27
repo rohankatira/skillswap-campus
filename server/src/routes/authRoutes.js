@@ -1,20 +1,20 @@
 
-const { toNodeHandler } = require('better-auth/node');
-const { auth } = require('../auth');
+let authHandler = null;
 
-/**
- * Express-compatible handler that mounts all Better Auth routes.
- *
- * Better Auth internally manages routes like:
- *   POST /api/auth/sign-up/email
- *   POST /api/auth/sign-in/email
- *   POST /api/auth/sign-out
- *   GET  /api/auth/session
- *   GET  /api/auth/get-session
- *
- * The `toNodeHandler` converts the Better Auth fetch-based handler into a
- * Node.js-compatible handler that Express can use with `app.all(...)`.
- */
-const authHandler = toNodeHandler(auth);
+async function getAuthHandler() {
+  if (!authHandler) {
+    const { toNodeHandler } = await import('better-auth/node');
+    const { auth } = require('../auth');
+    authHandler = toNodeHandler(auth);
+  }
+  return authHandler;
+}
 
-module.exports = authHandler;
+module.exports = async (req, res, next) => {
+  try {
+    const handler = await getAuthHandler();
+    return handler(req, res);
+  } catch (error) {
+    next(error);
+  }
+};

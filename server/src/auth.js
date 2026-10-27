@@ -18,12 +18,27 @@ async function getAuth() {
     import('better-auth/plugins'),
   ]);
 
+  const baseURL = (
+    process.env.BETTER_AUTH_URL ||
+    (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : null) ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
+    'https://skillswap-campus-rohan-katiras-projects.vercel.app'
+  ).trim().replace(/\/$/, '');
+
   authInstance = betterAuth({
     // Use the Mongoose native MongoDB client
     database: mongodbAdapter(mongoose.connection.db),
 
     // Server base URL
-    baseURL: (process.env.BETTER_AUTH_URL || 'http://localhost:5000').trim().replace(/\/$/, ''),
+    baseURL,
+
+    // Cookie configuration for cross-origin frontend-backend deployments on Vercel
+    advanced: {
+      defaultCookieAttributes: {
+        sameSite: 'none',
+        secure: true,
+      },
+    },
 
     // Allow requests from the React frontend (local, Vercel, and Render deployments)
     trustedOrigins: Array.from(

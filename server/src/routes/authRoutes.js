@@ -24,6 +24,33 @@ function extractSessionToken(setCookieHeader) {
   return null;
 }
 
+function resolveTargetLocation(location, clientOrigin) {
+  if (!location) return clientOrigin;
+  // If location is relative (e.g. '/' or '/profile?welcome=1')
+  if (location.startsWith('/')) {
+    return `${clientOrigin}${location}`;
+  }
+  try {
+    const parsed = new URL(location);
+    const targetOrigin = new URL(clientOrigin);
+    // If the redirect points to backend or localhost in production, redirect to frontend client origin
+    if (
+      process.env.VERCEL &&
+      (parsed.hostname.includes('localhost') ||
+        parsed.hostname.includes('skillswap-campus') ||
+        parsed.hostname.includes('onrender.com'))
+    ) {
+      parsed.protocol = targetOrigin.protocol;
+      parsed.hostname = targetOrigin.hostname;
+      parsed.port = targetOrigin.port;
+      return parsed.toString();
+    }
+    return location;
+  } catch {
+    return `${clientOrigin}/${location.replace(/^\/+/, '')}`;
+  }
+}
+
 module.exports = async (req, res, next) => {
   try {
     const handler = await getAuthHandler();
@@ -46,23 +73,26 @@ module.exports = async (req, res, next) => {
         if ((statusCode === 302 || statusCode === 307) && location && setCookie) {
           const token = extractSessionToken(setCookie);
           if (token) {
+            const clientOrigin = (
+              process.env.CLIENT_ORIGIN ||
+              (process.env.VERCEL ? 'https://client-mu-dun-74.vercel.app' : 'http://localhost:5173')
+            ).trim().replace(/\/$/, '');
+
+            const targetUrl = resolveTargetLocation(location, clientOrigin);
+            let newLocation;
             try {
-              const url = new URL(location);
+              const url = new URL(targetUrl);
               url.searchParams.set('token', token);
-              const newLocation = url.toString();
-              res.setHeader('location', newLocation);
-              if (actualHeaders) {
-                if (actualHeaders.Location) actualHeaders.Location = newLocation;
-                if (actualHeaders.location) actualHeaders.location = newLocation;
-              }
+              newLocation = url.toString();
             } catch {
-              const separator = location.includes('?') ? '&' : '?';
-              const newLocation = `${location}${separator}token=${encodeURIComponent(token)}`;
-              res.setHeader('location', newLocation);
-              if (actualHeaders) {
-                if (actualHeaders.Location) actualHeaders.Location = newLocation;
-                if (actualHeaders.location) actualHeaders.location = newLocation;
-              }
+              const separator = targetUrl.includes('?') ? '&' : '?';
+              newLocation = `${targetUrl}${separator}token=${encodeURIComponent(token)}`;
+            }
+
+            res.setHeader('location', newLocation);
+            if (actualHeaders) {
+              if (actualHeaders.Location) actualHeaders.Location = newLocation;
+              if (actualHeaders.location) actualHeaders.location = newLocation;
             }
           }
         }

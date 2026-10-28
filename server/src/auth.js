@@ -37,6 +37,12 @@ async function getAuth() {
     // Server base URL
     baseURL,
 
+    // Secret key for HMAC token signing and verification
+    secret:
+      process.env.BETTER_AUTH_SECRET ||
+      process.env.AUTH_SECRET ||
+      'skillswap-campus-better-auth-secret-key-32chars',
+
     // Cookie configuration for cross-origin frontend-backend deployments on Vercel
     advanced: {
       defaultCookieAttributes: {

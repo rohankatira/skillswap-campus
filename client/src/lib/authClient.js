@@ -6,6 +6,16 @@ export const AUTH_TOKEN_KEY = 'better_auth_token';
 
 export function getStoredAuthToken() {
   if (typeof window === 'undefined') return undefined;
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const urlToken = params.get('token') || params.get('auth_token');
+    if (urlToken) {
+      localStorage.setItem(AUTH_TOKEN_KEY, urlToken);
+      return urlToken;
+    }
+  } catch {
+    // Ignore URL parse errors
+  }
   return localStorage.getItem(AUTH_TOKEN_KEY) || undefined;
 }
 

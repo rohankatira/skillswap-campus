@@ -7,6 +7,7 @@ import {
   Video,
   Zap,
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const LIVE_PULSES = [
   '⚡ Liam swapped Figma with Maya for Python · 4m ago',
@@ -55,6 +56,7 @@ const bentoFeatures = [
 ];
 
 export default function Home() {
+  const { user, profile, isAuthenticated, hasProfile } = useAuth();
   const [pulseIdx, setPulseIdx] = useState(0);
 
   useEffect(() => {
@@ -91,21 +93,46 @@ export default function Home() {
       <section className="relative overflow-hidden bg-gradient-to-br from-indigo-700 via-indigo-600 to-violet-700 text-white">
         <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 py-20 sm:px-6 md:grid-cols-2 md:py-28 lg:px-8">
           <div>
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm backdrop-blur-sm">
-              <Sparkles size={16} className="text-amber-300" />
-              Modern Peer-to-Peer Learning on Campus
-            </span>
+            {isAuthenticated && user ? (
+              <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/40 bg-emerald-500/20 px-4 py-2 text-sm font-medium text-emerald-100 backdrop-blur-sm">
+                <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
+                Welcome back, {user.name || user.email}!
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm backdrop-blur-sm">
+                <Sparkles size={16} className="text-amber-300" />
+                Modern Peer-to-Peer Learning on Campus
+              </span>
+            )}
 
             <h1 className="mt-6 text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
-              Swap skills.
-              <span className="block bg-gradient-to-r from-indigo-200 via-white to-violet-200 bg-clip-text text-transparent">
-                Master anything together.
-              </span>
+              {isAuthenticated && user ? (
+                <>
+                  Hi {user.name ? user.name.split(' ')[0] : 'there'},
+                  <span className="block bg-gradient-to-r from-indigo-200 via-white to-violet-200 bg-clip-text text-transparent">
+                    ready to learn & teach today?
+                  </span>
+                </>
+              ) : (
+                <>
+                  Swap skills.
+                  <span className="block bg-gradient-to-r from-indigo-200 via-white to-violet-200 bg-clip-text text-transparent">
+                    Master anything together.
+                  </span>
+                </>
+              )}
             </h1>
 
             <p className="mt-6 max-w-xl text-base leading-7 text-indigo-100 sm:text-lg">
-              Connect with fellow university students to teach what you know and learn what you need.
-              Powered by custom AI roadmaps, live study rooms, and campus spot scheduling.
+              {isAuthenticated && user ? (
+                hasProfile ? (
+                  `Signed in as a ${profile?.course || 'student'}. Connect with learning partners, share what you know, and schedule live peer study sessions.`
+                ) : (
+                  'You are signed in! Complete your student profile to add what skills you teach and learn, and unlock partner matching across campus.'
+                )
+              ) : (
+                'Connect with fellow university students to teach what you know and learn what you need. Powered by custom AI roadmaps, live study rooms, and campus spot scheduling.'
+              )}
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3.5">
@@ -114,55 +141,128 @@ export default function Home() {
                 className="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3.5 font-bold text-indigo-700 shadow-xl transition hover:bg-indigo-50 active:scale-95"
               >
                 <Zap size={18} className="text-indigo-600" />
-                Find Learning Partners
+                {isAuthenticated ? 'Browse Match Partners' : 'Find Learning Partners'}
                 <ArrowRight size={18} />
               </Link>
 
-              <a
-                href="#how-it-works"
-                className="rounded-xl border border-white/30 bg-white/5 px-6 py-3.5 font-semibold text-white backdrop-blur-sm transition hover:bg-white/15"
-              >
-                See How It Works
-              </a>
+              {isAuthenticated ? (
+                <>
+                  <Link
+                    to="/requests"
+                    className="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-6 py-3.5 font-semibold text-white backdrop-blur-sm transition hover:bg-white/20"
+                  >
+                    My Requests
+                  </Link>
+                  {!hasProfile && (
+                    <Link
+                      to="/profile"
+                      className="inline-flex items-center gap-2 rounded-xl bg-amber-400 px-5 py-3.5 font-bold text-gray-950 shadow-lg transition hover:bg-amber-300 active:scale-95"
+                    >
+                      Complete Profile
+                    </Link>
+                  )}
+                </>
+              ) : (
+                <a
+                  href="#how-it-works"
+                  className="rounded-xl border border-white/30 bg-white/5 px-6 py-3.5 font-semibold text-white backdrop-blur-sm transition hover:bg-white/15"
+                >
+                  See How It Works
+                </a>
+              )}
             </div>
           </div>
 
-          {/* Interactive Feature Visual Preview Card */}
+          {/* Interactive Feature Visual Preview / Active User Card */}
           <div className="mx-auto w-full max-w-md rounded-3xl border border-white/20 bg-white/10 p-6 shadow-2xl backdrop-blur-md">
-            <div className="flex items-center justify-between border-b border-white/15 pb-4">
-              <div className="flex items-center gap-2.5">
-                <span className="size-3 rounded-full bg-rose-400" />
-                <span className="size-3 rounded-full bg-amber-400" />
-                <span className="size-3 rounded-full bg-emerald-400" />
-                <span className="ml-2 text-xs font-semibold text-white/80">SkillSwap Live Study Room</span>
-              </div>
-              <span className="rounded-full bg-emerald-400/20 px-2.5 py-0.5 text-[10px] font-bold text-emerald-300">
-                ● Live Call & Notes
-              </span>
-            </div>
+            {isAuthenticated && user ? (
+              <>
+                <div className="flex items-center justify-between border-b border-white/15 pb-4">
+                  <div className="flex items-center gap-2.5">
+                    <span className="size-3 rounded-full bg-emerald-400" />
+                    <span className="ml-1 text-sm font-bold text-white">Your Campus Account</span>
+                  </div>
+                  <span className="rounded-full bg-emerald-400/20 px-2.5 py-0.5 text-[10px] font-bold text-emerald-300">
+                    ● Signed In
+                  </span>
+                </div>
 
-            <div className="mt-4 space-y-3">
-              <div className="rounded-2xl bg-white/10 p-3.5 text-xs text-white">
-                <p className="font-bold text-indigo-200">🧠 AI Swap Roadmap Generated</p>
-                <p className="mt-1 text-white/90">
-                  Maya teaches Figma Components ⟷ Liam teaches React & Tailwind CSS
-                </p>
-              </div>
+                <div className="mt-4 space-y-3">
+                  <div className="rounded-2xl bg-white/10 p-3.5 text-xs text-white">
+                    <p className="font-bold text-indigo-200">👤 {user.name || 'Student Member'}</p>
+                    <p className="mt-1 text-white/90 truncate">{user.email}</p>
+                  </div>
 
-              <div className="rounded-2xl bg-white/10 p-3.5 text-xs text-white">
-                <p className="font-bold text-amber-200">📍 Study Session Confirmed</p>
-                <p className="mt-1 text-white/90">
-                  Campus Library 2nd Floor · Tomorrow at 4:30 PM (45m)
-                </p>
-              </div>
+                  <div className="rounded-2xl bg-white/10 p-3.5 text-xs text-white">
+                    <p className="font-bold text-amber-200">🎓 Profile Status</p>
+                    <p className="mt-1 text-white/90">
+                      {hasProfile ? (profile?.course || 'Active Student Profile') : 'Pending Profile Setup'}
+                    </p>
+                    {hasProfile && profile?.teachSkills?.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {profile.teachSkills.slice(0, 3).map((s) => (
+                          <span key={s} className="rounded-md bg-white/20 px-1.5 py-0.5 text-[10px]">
+                            Teach: {s}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
 
-              <div className="rounded-2xl bg-white/10 p-3.5 text-xs text-white">
-                <p className="font-bold text-emerald-200">✓ Shared Scratchpad Synced</p>
-                <p className="mt-1 font-mono text-[11px] text-white/80">
-                  const Button = () =&gt; &lt;div className="p-4"&gt;...&lt;/div&gt;
-                </p>
-              </div>
-            </div>
+                  <div className="flex items-center justify-between pt-1 text-xs">
+                    <Link
+                      to="/profile"
+                      className="font-semibold text-white underline hover:text-indigo-200"
+                    >
+                      {hasProfile ? 'Edit Profile →' : 'Set up profile now →'}
+                    </Link>
+                    <Link
+                      to="/requests"
+                      className="font-semibold text-indigo-200 hover:text-white"
+                    >
+                      View Exchanges →
+                    </Link>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center justify-between border-b border-white/15 pb-4">
+                  <div className="flex items-center gap-2.5">
+                    <span className="size-3 rounded-full bg-rose-400" />
+                    <span className="size-3 rounded-full bg-amber-400" />
+                    <span className="size-3 rounded-full bg-emerald-400" />
+                    <span className="ml-2 text-xs font-semibold text-white/80">SkillSwap Live Study Room</span>
+                  </div>
+                  <span className="rounded-full bg-emerald-400/20 px-2.5 py-0.5 text-[10px] font-bold text-emerald-300">
+                    ● Live Call & Notes
+                  </span>
+                </div>
+
+                <div className="mt-4 space-y-3">
+                  <div className="rounded-2xl bg-white/10 p-3.5 text-xs text-white">
+                    <p className="font-bold text-indigo-200">🧠 AI Swap Roadmap Generated</p>
+                    <p className="mt-1 text-white/90">
+                      Maya teaches Figma Components ⟷ Liam teaches React & Tailwind CSS
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl bg-white/10 p-3.5 text-xs text-white">
+                    <p className="font-bold text-amber-200">📍 Study Session Confirmed</p>
+                    <p className="mt-1 text-white/90">
+                      Campus Library 2nd Floor · Tomorrow at 4:30 PM (45m)
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl bg-white/10 p-3.5 text-xs text-white">
+                    <p className="font-bold text-emerald-200">✓ Shared Scratchpad Synced</p>
+                    <p className="mt-1 font-mono text-[11px] text-white/80">
+                      const Button = () =&gt; &lt;div className="p-4"&gt;...&lt;/div&gt;
+                    </p>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </section>

@@ -50,7 +50,12 @@ app.use(express.json());
 
 // Root route: redirect browser visits on the backend port directly to the React frontend
 app.get('/', (req, res) => {
-  res.redirect(process.env.CLIENT_ORIGIN || 'http://localhost:5173');
+  const clientOrigin = (
+    process.env.CLIENT_ORIGIN ||
+    (process.env.VERCEL ? 'https://client-mu-dun-74.vercel.app' : 'http://localhost:5173')
+  ).trim().replace(/\/$/, '');
+  const search = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+  res.redirect(`${clientOrigin}/${search}`);
 });
 
 // Health check

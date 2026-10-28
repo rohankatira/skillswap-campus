@@ -164,7 +164,7 @@ export default function SignUp() {
 
               {/* Social Login Providers (Google, Facebook, Apple) */}
               <div className="mb-4">
-                <SocialAuthButtons callbackUrl="/profile?welcome=1" onError={setError} />
+                <SocialAuthButtons callbackUrl="/" onError={setError} />
               </div>
 
               {/* Error Banner */}

@@ -4,7 +4,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { Menu, X, GraduationCap, LogIn, LogOut, UserCircle2 } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import { useAuth } from '../context/AuthContext';
-import { signOut } from '../lib/authClient';
+import { signOut, setStoredAuthToken } from '../lib/authClient';
 
 const navLinks = [
   { label: 'Home', to: '/' },
@@ -26,6 +26,7 @@ export default function Navbar() {
     }`;
 
   async function handleSignOut() {
+    setStoredAuthToken(null);
     await signOut({
       fetchOptions: {
         onSuccess: () => {

@@ -1,12 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { GraduationCap, User, Mail, Lock, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
-import { signUp, authClient } from '../lib/authClient';
+import { signUp, authClient, setStoredAuthToken } from '../lib/authClient';
+import { useAuth } from '../context/AuthContext';
 import SocialAuthButtons from '../components/SocialAuthButtons';
 import OtpVerificationCard from '../components/OtpVerificationCard';
 
 export default function SignUp() {
   const navigate = useNavigate();
+  const { isAuthenticated, refreshSession } = useAuth();
+
+  // If already authenticated, redirect to profile
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/profile', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const [step, setStep] = useState('form'); // 'form' | 'otp'
   const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' });
@@ -68,15 +77,23 @@ export default function SignUp() {
     setOtpError('');
 
     try {
-      const { error: verifyErr } = await authClient.emailOtp.verifyEmail({
+      const verifyRes = await authClient.emailOtp.verifyEmail({
         email: form.email.trim(),
         otp: otpCode,
       });
 
-      if (verifyErr) {
-        setOtpError(verifyErr.message || 'Invalid or expired verification code.');
+      if (verifyRes?.error) {
+        setOtpError(verifyRes.error.message || 'Invalid or expired verification code.');
         setIsVerifyingOtp(false);
         return;
+      }
+
+      const token = verifyRes?.data?.token || verifyRes?.data?.session?.token;
+      if (token) {
+        setStoredAuthToken(token);
+      }
+      if (refreshSession) {
+        await refreshSession(token);
       }
 
       // Verification successful and session established
@@ -105,20 +122,31 @@ export default function SignUp() {
         {/* Card */}
         <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-lg dark:border-gray-800 dark:bg-gray-900">
           {step === 'otp' ? (
-            <OtpVerificationCard
-              email={form.email}
-              title="Verify your email"
-              subtitle="We've sent a 6-digit verification code to"
-              onVerify={handleVerifyOtp}
-              onResend={handleResendOtp}
-              onBack={() => {
-                setStep('form');
-                setOtpError('');
-              }}
-              isVerifying={isVerifyingOtp}
-              error={otpError}
-              clearError={() => setOtpError('')}
-            />
+            <>
+              <OtpVerificationCard
+                email={form.email}
+                title="Verify your email"
+                subtitle="We've sent a 6-digit verification code to"
+                onVerify={handleVerifyOtp}
+                onResend={handleResendOtp}
+                onBack={() => {
+                  setStep('form');
+                  setOtpError('');
+                }}
+                isVerifying={isVerifyingOtp}
+                error={otpError}
+                clearError={() => setOtpError('')}
+              />
+              <p className="mt-4 text-center text-xs text-gray-500 dark:text-gray-400">
+                Already verified or want to use another method?{' '}
+                <Link
+                  to="/sign-in"
+                  className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+                >
+                  Sign in
+                </Link>
+              </p>
+            </>
           ) : (
             <>
               {/* Logo + Title */}

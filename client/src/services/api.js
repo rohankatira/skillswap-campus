@@ -1,21 +1,23 @@
 
-// Base URL for the Express REST API (/api/students, /api/requests, etc.)
-// VITE_API_URL points to the server root; we append /api for REST routes.
-const SERVER_URL = (
-  import.meta.env.VITE_API_URL || 'http://localhost:5000'
-).replace(/\/+$/, '');
+import { getStoredAuthToken, resolveBaseUrl } from '../lib/authClient';
 
-const API_BASE_URL = `${SERVER_URL}/api`;
-
+/**
+ * Base URL for Express REST API (/api/students, /api/requests, etc.).
+ * When deployed on Vercel, requests to /api are proxied to the backend server via client/vercel.json.
+ */
 export async function apiRequest(path, options = {}) {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  const baseUrl = resolveBaseUrl();
+  const apiBaseUrl = baseUrl ? `${baseUrl}/api` : '/api';
+  const token = getStoredAuthToken();
 
-  const response = await fetch(`${API_BASE_URL}${normalizedPath}`, {
+  const response = await fetch(`${apiBaseUrl}${normalizedPath}`, {
     ...options,
     // Include credentials so Better Auth session cookies are sent on every request
     credentials: 'include',
     headers: {
       ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
   });

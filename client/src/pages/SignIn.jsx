@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   GraduationCap,
@@ -10,16 +10,25 @@ import {
   Loader2,
   KeyRound,
 } from 'lucide-react';
-import { signIn, authClient } from '../lib/authClient';
+import { signIn, authClient, setStoredAuthToken } from '../lib/authClient';
+import { useAuth } from '../context/AuthContext';
 import SocialAuthButtons from '../components/SocialAuthButtons';
 import OtpVerificationCard from '../components/OtpVerificationCard';
 
 export default function SignIn() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isAuthenticated, refreshSession } = useAuth();
 
   // Redirect back to the page the user tried to visit, or home
   const from = location.state?.from?.pathname || '/';
+
+  // If already authenticated, redirect to destination
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, navigate, from]);
 
   // Mode: 'password' | 'email-otp'
   const [authMode, setAuthMode] = useState('password');
@@ -50,7 +59,14 @@ export default function SignIn() {
       await signIn.email(
         { email: form.email.trim(), password: form.password },
         {
-          onSuccess: () => {
+          onSuccess: async (ctx) => {
+            const token = ctx?.data?.token || ctx?.data?.session?.token;
+            if (token) {
+              setStoredAuthToken(token);
+            }
+            if (refreshSession) {
+              await refreshSession(token);
+            }
             navigate(from, { replace: true });
           },
           onError: async (ctx) => {
@@ -123,30 +139,46 @@ export default function SignIn() {
 
     try {
       if (otpType === 'email-verification') {
-        const { error: verifyErr } = await authClient.emailOtp.verifyEmail({
+        const verifyRes = await authClient.emailOtp.verifyEmail({
           email: form.email.trim(),
           otp: otpCode,
         });
 
-        if (verifyErr) {
-          setOtpError(verifyErr.message || 'Invalid or expired verification code.');
+        if (verifyRes?.error) {
+          setOtpError(verifyRes.error.message || 'Invalid or expired verification code.');
           setIsVerifyingOtp(false);
           return;
+        }
+
+        const token = verifyRes?.data?.token || verifyRes?.data?.session?.token;
+        if (token) {
+          setStoredAuthToken(token);
+        }
+        if (refreshSession) {
+          await refreshSession(token);
         }
 
         // Successfully verified email and authenticated
         navigate(from, { replace: true });
       } else {
         // Sign in with email OTP
-        const { error: signErr } = await authClient.signIn.emailOtp({
+        const signRes = await authClient.signIn.emailOtp({
           email: form.email.trim(),
           otp: otpCode,
         });
 
-        if (signErr) {
-          setOtpError(signErr.message || 'Invalid or expired sign-in code.');
+        if (signRes?.error) {
+          setOtpError(signRes.error.message || 'Invalid or expired sign-in code.');
           setIsVerifyingOtp(false);
           return;
+        }
+
+        const token = signRes?.data?.token || signRes?.data?.session?.token;
+        if (token) {
+          setStoredAuthToken(token);
+        }
+        if (refreshSession) {
+          await refreshSession(token);
         }
 
         // Authenticated!

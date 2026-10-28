@@ -1,13 +1,13 @@
 
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { useSession } from '../lib/authClient';
+import { useSession, setStoredAuthToken } from '../lib/authClient';
 import { getMyProfile } from '../services/studentService';
 
 /**
  * AuthContext — exposes session state globally via React Context.
  *
  * Usage in any component:
- *   const { session, user, isPending, isAuthenticated } = useAuth();
+ *   const { session, user, isPending, isAuthenticated, refreshSession } = useAuth();
  *
  * Also exposes the logged-in user's Student profile:
  *   const { profile, profileLoading, hasProfile, refreshProfile, setProfile } = useAuth();
@@ -25,6 +25,13 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const [loadedForUserId, setLoadedForUserId] = useState(null);
+
+  // Automatically synchronize session token into storage for cross-origin and first-party fallback
+  useEffect(() => {
+    if (session?.session?.token) {
+      setStoredAuthToken(session.session.token);
+    }
+  }, [session]);
 
   const refreshProfile = useCallback(async () => {
     if (!userId) {
@@ -45,6 +52,14 @@ export function AuthProvider({ children }) {
       setLoadedForUserId(userId);
     }
   }, [userId]);
+
+  const refreshSession = useCallback(async (newToken) => {
+    if (newToken) {
+      setStoredAuthToken(newToken);
+    }
+    await refetch();
+    await refreshProfile();
+  }, [refetch, refreshProfile]);
 
   // Load (or clear) the profile whenever the signed-in user changes.
   useEffect(() => {
@@ -69,6 +84,7 @@ export function AuthProvider({ children }) {
         error,
         isAuthenticated,
         refetch,
+        refreshSession,
         profile,
         setProfile,
         profileLoading:

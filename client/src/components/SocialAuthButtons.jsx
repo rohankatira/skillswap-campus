@@ -40,8 +40,8 @@ export default function SocialAuthButtons({ callbackUrl = '/', onError }) {
       window.location.hostname !== 'localhost' &&
       window.location.hostname !== '127.0.0.1';
 
-    const currentApiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000').trim();
-    const isLocalApiInProd = isProduction && currentApiUrl.includes('localhost');
+    const currentApiUrl = (import.meta.env.VITE_API_URL || '').trim();
+    const isLocalApiInProd = isProduction && currentApiUrl !== '' && currentApiUrl.includes('localhost');
 
     // Immediate check: deployed on Vercel/production but VITE_API_URL is still pointing to localhost
     if (isLocalApiInProd) {

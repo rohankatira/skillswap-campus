@@ -12,7 +12,7 @@ async function getAuth() {
     return authInstance;
   }
 
-  const [{ betterAuth }, { mongodbAdapter }, { emailOTP }] = await Promise.all([
+  const [{ betterAuth }, { mongodbAdapter }, { emailOTP, bearer }] = await Promise.all([
     import('better-auth'),
     import('better-auth/adapters/mongodb'),
     import('better-auth/plugins'),
@@ -110,6 +110,7 @@ async function getAuth() {
         expiresIn: 300, // 5 minutes
         otpLength: 6,
       }),
+      bearer(),
     ],
 
     // Additional fields stored on the user document

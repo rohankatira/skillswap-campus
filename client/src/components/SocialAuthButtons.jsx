@@ -97,6 +97,13 @@ export default function SocialAuthButtons({ callbackUrl = '/', onError }) {
         }
       );
 
+      // Explicitly redirect to OAuth provider URL if returned
+      const redirectUrl = res?.data?.url || res?.url;
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
+        return;
+      }
+
       // If better-fetch returned an error object rather than throwing
       if (res?.error) {
         const rawMessage = res.error.message || '';

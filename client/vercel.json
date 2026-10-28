@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://skillswap-campus-rohan-katiras-projects.vercel.app/api/$1"
+      "destination": "https://skillswap-campus-indol.vercel.app/api/$1"
     },
     {
       "source": "/(.*)",

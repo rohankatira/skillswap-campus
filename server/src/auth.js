@@ -20,16 +20,15 @@ async function getAuth() {
 
   let baseURL = process.env.BETTER_AUTH_URL;
   if (!baseURL || (process.env.VERCEL && baseURL.includes('localhost'))) {
-    if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
-      baseURL = `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
-    } else if (process.env.VERCEL_URL) {
-      baseURL = `https://${process.env.VERCEL_URL}`;
-    } else {
-      baseURL = 'https://skillswap-campus-rohan-katiras-projects.vercel.app';
-    }
+    baseURL = 'https://skillswap-campus-indol.vercel.app';
   }
   baseURL = (baseURL || 'http://localhost:5000').trim().replace(/\/$/, '');
   process.env.BETTER_AUTH_URL = baseURL;
+
+  const clientOrigin = (
+    process.env.CLIENT_ORIGIN ||
+    (process.env.VERCEL ? 'https://client-mu-dun-74.vercel.app' : 'http://localhost:5173')
+  ).trim().replace(/\/$/, '');
 
   authInstance = betterAuth({
     // Use the Mongoose native MongoDB client
@@ -49,7 +48,7 @@ async function getAuth() {
     // Allow requests from the React frontend (local, Vercel, and Render deployments)
     trustedOrigins: Array.from(
       new Set([
-        (process.env.CLIENT_ORIGIN || 'http://localhost:5173').trim().replace(/\/$/, ''),
+        clientOrigin,
         'http://localhost:5173',
         'http://localhost:3000',
         'http://127.0.0.1:5173',
@@ -73,14 +72,15 @@ async function getAuth() {
       autoSignInAfterVerification: true,
     },
 
-    // Skip browser state cookie check across localhost ports (verifies state securely via database instead)
+    // Store state in database and skip browser state cookie check across origins and PSL domains
     account: {
+      storeStateStrategy: 'database',
       skipStateCookieCheck: true,
     },
 
     // In case of an auth error, redirect back to the React app instead of backend 404
     onAPIError: {
-      errorURL: `${process.env.CLIENT_ORIGIN || 'http://localhost:5173'}/sign-in`,
+      errorURL: `${clientOrigin}/sign-in`,
     },
 
     // Social Auth Providers: Google & Facebook

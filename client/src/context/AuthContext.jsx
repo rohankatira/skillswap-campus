@@ -33,6 +33,26 @@ export function AuthProvider({ children }) {
     }
   }, [session]);
 
+  // Read token from URL query params (e.g. from Google / Facebook OAuth provider callback redirect)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const urlToken = params.get('token') || params.get('auth_token');
+      if (urlToken) {
+        setStoredAuthToken(urlToken);
+        params.delete('token');
+        params.delete('auth_token');
+        const newSearch = params.toString();
+        const newUrl =
+          window.location.pathname +
+          (newSearch ? `?${newSearch}` : '') +
+          window.location.hash;
+        window.history.replaceState({}, '', newUrl);
+        refetch();
+      }
+    }
+  }, [refetch]);
+
   const refreshProfile = useCallback(async () => {
     if (!userId) {
       setProfile(null);
